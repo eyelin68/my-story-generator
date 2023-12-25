@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.17/dist/tailwind.min.css" rel="stylesheet">
+    <title>Story Generator</title>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto">
+        <!-- Input forms for user preferences -->
+        <div id="input-form" class="p-4">
+            <form id="story-form">
+                <div class="mt-4">
+                    <label for="word1" class="block">Enter Word 1:</label>
+                    <input id="word1" type="text" class="block w-full bg-gray-800 text-white mt-1 p-2">
+                </div>
+                <div class="mt-4">
+                    <label for="word2" class="block">Enter Word 2:</label>
+                    <input id="word2" type="text" class="block w-full bg-gray-800 text-white mt-1 p-2">
+                </div>
+                <div class="mt-4">
+                    <label for="word3" class="block">Enter Word 3:</label>
+                    <input id="word3" type="text" class="block w-full bg-gray-800 text-white mt-1 p-2">
+                </div>
+                <button type="button" id="generate-story-btn" class="mt-4 bg-purple-500 hover:bg-purple-600 px-4 py-2 text-white">Generate Story</button>
+            </form>
+        </div>
+        <!-- Display area for the generated story -->
+        <div id="story-display" class="mt-4 p-4">
+            <h2 class="text-2xl font-bold mb-4">Generated Story:</h2>
+            <div id="generated-story" class="bg-gray-800 p-4 rounded text-white whitespace-pre-wrap">
+                <!-- The generated story will be displayed here -->
+            </div>
+        </div>
+    </div>
+    <!-- Your JavaScript code here -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateStoryBtn = document.getElementById('generate-story-btn');
+
+            generateStoryBtn.addEventListener('click', async () => {
+                const word1Input = document.getElementById('word1');
+                const word2Input = document.getElementById('word2');
+                const word3Input = document.getElementById('word3');
+
+                const word1 = word1Input.value.trim();
+                const word2 = word2Input.value.trim();
+                const word3 = word3Input.value.trim();
+
+                if (!word1 || !word2 || !word3) {
+                    alert('Please enter all three words.');
+                    return;
+                }
+
+                const generatedStory = document.getElementById('generated-story'); // Define generatedStory here
+
+                const prompt = `Create a short story based on the words: "${word1}", "${word2}", and "${word3}".\n\nStory: `;
+
+                await generateStory(prompt, generatedStory);
+            });
+        });
+
+        async function generateStory(prompt, targetElement) {
+            try {
+                const response = await fetch('https://api.openai.com/v1/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer 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'
+                    },
+                    body: JSON.stringify({
+                        model: 'text-davinci-003',
+                        prompt: prompt,
+                        max_tokens: 1200,
+                        n: 1,
+                        stop: null,
+                        temperature: 1.0,
+                    }),
+                });
+
+                if (!response.ok) {
+                    logError(`Error: ${response.status} - ${response.statusText}`, targetElement);
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.choices && data.choices.length > 0) {
+                    targetElement.innerText = data.choices[0].text;
+                } else {
+                    logError(handleAPIError(data), targetElement);
+                }
+            } catch (error) {
+                logError(`An unexpected error occurred: ${error.message}`, targetElement);
+            }
+        }
+
+        function logError(message, targetElement) {
+            console.error(message);
+            targetElement.innerText = message;
+        }
+
+        function handleAPIError(data) {
+            if (data.error) {
+                return `Error: ${data.error.message}`;
+            } else {
+                return 'An error occurred while generating the story. Please try again.';
+            }
+        }
+    </script>
+</body>
+</html>
